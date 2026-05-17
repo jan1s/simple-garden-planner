@@ -9,6 +9,7 @@ import { PlaceTool } from './PlaceTool';
 import { SelectTool } from './SelectTool';
 import { ScaleTool } from './ScaleTool';
 import { DimensionTool } from './DimensionTool';
+import { AnnotationTool } from './AnnotationTool';
 
 export type ToolContext = {
   viewport: Viewport;
@@ -24,6 +25,7 @@ export class ToolController {
   private placeTool = new PlaceTool();
   private scaleTool = new ScaleTool();
   private dimensionTool = new DimensionTool();
+  private annotationTool = new AnnotationTool();
   private panning = false;
   private spaceHeld = false;
   private lastPan: Point | null = null;
@@ -75,6 +77,7 @@ export class ToolController {
     this.polygonTool.reset();
     this.polylineTool.reset();
     this.dimensionTool.reset();
+    this.annotationTool.reset();
     this.scaleTool.reset();
     this.updateDraftFlag();
     this.ctx.requestRender();
@@ -173,6 +176,9 @@ export class ToolController {
       case 'dimension':
         this.dimensionTool.onDown(world);
         break;
+      case 'annotation':
+        this.annotationTool.onDown(world);
+        break;
     }
     this.updateDraftFlag();
     this.ctx.requestRender();
@@ -199,6 +205,8 @@ export class ToolController {
       this.polylineTool.onMove(world);
     } else if (tool === 'dimension') {
       this.dimensionTool.onMove(world);
+    } else if (tool === 'annotation') {
+      this.annotationTool.onMove(world);
     }
     this.ctx.requestRender();
   };
@@ -227,6 +235,7 @@ export class ToolController {
       polygon: this.polygonTool.getPreview(),
       polyline: this.polylineTool.getPreview(),
       dimension: this.dimensionTool.getPreview(),
+      annotation: this.annotationTool.getPreview(),
       scale: this.scaleTool.getPreview(),
       selectHandles: this.selectTool.getHandlePoints(),
       gridHandles: this.selectTool.getGridHandleOverlay(),

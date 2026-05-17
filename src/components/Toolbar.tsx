@@ -20,6 +20,7 @@ const TOOL_GROUPS: ToolDef[][] = [
   [
     { id: 'scale', label: 'Scale', icon: 'scale' },
     { id: 'dimension', label: 'Dimension', icon: 'dimension' },
+    { id: 'annotation', label: 'Annotation', icon: 'annotation' },
   ],
   [
     { id: 'plot', label: 'Plot', icon: 'plot' },
@@ -55,7 +56,14 @@ function ToolButtons({ className }: { className?: string }) {
               icon={tool.icon}
               label={tool.label}
               className={activeTool === tool.id ? 'active' : ''}
-              onClick={() => setActiveTool(tool.id)}
+              onClick={() => {
+                setActiveTool(tool.id);
+                if (tool.id === 'annotation') {
+                  useSceneStore
+                    .getState()
+                    .setStatusMessage('Annotation: click arrow target');
+                }
+              }}
             />
           ))}
         </div>

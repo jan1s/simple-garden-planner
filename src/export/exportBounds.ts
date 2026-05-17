@@ -96,6 +96,15 @@ function collectElementPoints(
         { x: mid.x + 48, y: mid.y + 8 },
       ];
     }
+    case 'annotation': {
+      const pad = 72;
+      return [
+        el.tip,
+        el.anchor,
+        { x: el.anchor.x - pad, y: el.anchor.y - pad },
+        { x: el.anchor.x + pad, y: el.anchor.y + pad },
+      ];
+    }
     case 'path': {
       if (el.points.length < 2) return el.points;
       const halfW = metersToPixels(el.widthM, ppm) / 2 + 4;

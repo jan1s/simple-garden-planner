@@ -290,6 +290,9 @@ export class SelectTool {
     } else if (el.type === 'dimension') {
       if (index === 0) store.updateElement(el.id, { a: p });
       else store.updateElement(el.id, { b: p });
+    } else if (el.type === 'annotation') {
+      if (index === 0) store.updateElement(el.id, { tip: p });
+      else store.updateElement(el.id, { anchor: p });
     } else if ('points' in el) {
       const points = [...el.points];
       points[index] = p;
@@ -309,6 +312,13 @@ export class SelectTool {
         ...el,
         a: { x: el.a.x + dx, y: el.a.y + dy },
         b: { x: el.b.x + dx, y: el.b.y + dy },
+      };
+    }
+    if (el.type === 'annotation') {
+      return {
+        ...el,
+        tip: { x: el.tip.x + dx, y: el.tip.y + dy },
+        anchor: { x: el.anchor.x + dx, y: el.anchor.y + dy },
       };
     }
     if ('points' in el) {

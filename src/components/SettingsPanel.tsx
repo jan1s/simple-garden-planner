@@ -11,6 +11,7 @@ const LAYER_LABELS: { key: keyof LayerVisibility; label: string }[] = [
   { key: 'tree', label: 'Trees' },
   { key: 'bush', label: 'Bushes' },
   { key: 'dimension', label: 'Dimensions' },
+  { key: 'annotation', label: 'Annotations' },
 ];
 
 export function SettingsPanel() {

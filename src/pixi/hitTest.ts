@@ -26,6 +26,7 @@ import { ELEMENT_DRAW_ORDER } from '../model/types';
 export function getElementPoints(el: GardenElement): Point[] {
   if (el.type === 'tree' || el.type === 'bush') return [el.position];
   if (el.type === 'dimension') return [el.a, el.b];
+  if (el.type === 'annotation') return [el.tip, el.anchor];
   if ('points' in el) return el.points;
   return [];
 }
@@ -54,6 +55,12 @@ export function hitTestElement(
         minDistanceToPolyline(worldPoint, [el.a, el.b]) <= tolerance ||
         distance(worldPoint, el.a) <= tolerance ||
         distance(worldPoint, el.b) <= tolerance
+      );
+    case 'annotation':
+      return (
+        minDistanceToPolyline(worldPoint, [el.anchor, el.tip]) <= tolerance ||
+        distance(worldPoint, el.tip) <= tolerance + 6 ||
+        distance(worldPoint, el.anchor) <= tolerance + 40
       );
     default:
       return false;

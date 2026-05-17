@@ -315,6 +315,18 @@ function SingleElementProperties({
           />
         </label>
       )}
+
+      {el.type === 'annotation' && (
+        <label className="field">
+          Text
+          <textarea
+            rows={3}
+            value={el.text}
+            onChange={(e) => onUpdate({ text: e.target.value })}
+            placeholder="Label on plan"
+          />
+        </label>
+      )}
     </>
   );
 }

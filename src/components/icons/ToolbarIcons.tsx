@@ -72,6 +72,18 @@ export function IconDimension(p: IconProps) {
   );
 }
 
+export function IconAnnotation(p: IconProps) {
+  const { size, className } = { ...defaults, ...p };
+  return (
+    <Svg size={size} className={className}>
+      <rect x="3" y="4" width="12" height="8" rx="1.5" />
+      <path d="M7 12v2.5" />
+      <path d="M9 14.5L19 20" />
+      <path d="M16.5 20h3.5l-2.5 2.5" />
+    </Svg>
+  );
+}
+
 export function IconPlot(p: IconProps) {
   const { size, className } = { ...defaults, ...p };
   return (
@@ -277,6 +289,7 @@ export type ToolbarIconId =
   | 'pan'
   | 'scale'
   | 'dimension'
+  | 'annotation'
   | 'plot'
   | 'building'
   | 'terrace'
@@ -303,6 +316,7 @@ const ICON_MAP: Record<ToolbarIconId, (p: IconProps) => ReactElement> = {
   pan: IconPan,
   scale: IconScale,
   dimension: IconDimension,
+  annotation: IconAnnotation,
   plot: IconPlot,
   building: IconBuilding,
   terrace: IconTerrace,

@@ -5,6 +5,7 @@ import { ELEMENT_DRAW_ORDER } from '../model/types';
 import { isPolygonLocked } from '../model/elements';
 import type { GardenElement } from '../model/types';
 import {
+  drawAnnotation,
   drawDimension,
   drawElement,
   drawHandles,
@@ -89,6 +90,10 @@ export class SceneRenderer {
           const c = new Container();
           drawDimension(c, el, scene);
           this.elementsLayer.addChild(c);
+        } else if (el.type === 'annotation') {
+          const c = new Container();
+          drawAnnotation(c, el);
+          this.elementsLayer.addChild(c);
         } else if (el.type === 'tree' || el.type === 'bush') {
           const c = new Container();
           drawPlant(c, el, scene);
@@ -140,6 +145,19 @@ export class SceneRenderer {
       };
       const c = new Container();
       drawDimension(c, dimEl, scene);
+      this.overlayLayer.addChild(c);
+    }
+
+    if (preview?.annotation?.tip && preview.annotation.anchor) {
+      const annEl = {
+        type: 'annotation' as const,
+        id: '__preview__',
+        tip: preview.annotation.tip,
+        anchor: preview.annotation.anchor,
+        text: 'Note',
+      };
+      const c = new Container();
+      drawAnnotation(c, annEl);
       this.overlayLayer.addChild(c);
     }
 
@@ -195,6 +213,13 @@ export class SceneRenderer {
     } else if (el.type === 'dimension') {
       g.moveTo(el.a.x, el.a.y);
       g.lineTo(el.b.x, el.b.y);
+      g.stroke({ color: '#2563eb', width: 2 });
+    } else if (el.type === 'annotation') {
+      g.moveTo(el.anchor.x, el.anchor.y);
+      g.lineTo(el.tip.x, el.tip.y);
+      g.stroke({ color: '#2563eb', width: 2 });
+      g.circle(el.anchor.x, el.anchor.y, 6);
+      g.circle(el.tip.x, el.tip.y, 5);
       g.stroke({ color: '#2563eb', width: 2 });
     } else if ('points' in el && el.points.length > 0) {
       const flat = el.points.flatMap((p: { x: number; y: number }) => [p.x, p.y]);

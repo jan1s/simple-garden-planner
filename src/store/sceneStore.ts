@@ -356,3 +356,17 @@ export function createDimensionElement(
     offset,
   };
 }
+
+export function createAnnotationElement(
+  tip: Point,
+  anchor: Point,
+  text = 'Note',
+): GardenElement {
+  return {
+    type: 'annotation',
+    id: uuidv4(),
+    tip,
+    anchor,
+    text,
+  };
+}

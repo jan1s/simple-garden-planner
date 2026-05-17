@@ -9,7 +9,7 @@ import {
   perpendicularOffset,
 } from '../model/geometry';
 import { isPolygonLocked } from '../model/elements';
-import type { GardenElement, PlantElement, Scene } from '../model/types';
+import type { GardenElement, PlantElement, Point, Scene } from '../model/types';
 import { isArchitectural, type PlanDrawStyle } from './drawStyle';
 
 const ARCH_STROKE = '#000000';
@@ -60,6 +60,20 @@ const ARCH_COMMENT_STYLE = new TextStyle({
 const ARCH_DIM_STYLE = new TextStyle({
   fontFamily: 'system-ui, sans-serif',
   fontSize: 12,
+  fill: ARCH_TEXT,
+  fontWeight: '600',
+});
+
+const ANNOTATION_STYLE = new TextStyle({
+  fontFamily: 'system-ui, sans-serif',
+  fontSize: 12,
+  fill: '#1e3a5f',
+  fontWeight: '600',
+});
+
+const ARCH_ANNOTATION_STYLE = new TextStyle({
+  fontFamily: 'system-ui, sans-serif',
+  fontSize: 11,
   fill: ARCH_TEXT,
   fontWeight: '600',
 });
@@ -306,6 +320,88 @@ export function drawPlant(
     comment.position.set(el.position.x, el.position.y + r + 10);
     container.addChild(comment);
   }
+}
+
+function drawArrowhead(
+  g: Graphics,
+  tip: Point,
+  from: Point,
+  size: number,
+  color: string,
+): void {
+  const angle = Math.atan2(tip.y - from.y, tip.x - from.x);
+  const wing = size;
+  const left = {
+    x: tip.x - wing * Math.cos(angle - Math.PI / 7),
+    y: tip.y - wing * Math.sin(angle - Math.PI / 7),
+  };
+  const right = {
+    x: tip.x - wing * Math.cos(angle + Math.PI / 7),
+    y: tip.y - wing * Math.sin(angle + Math.PI / 7),
+  };
+  g.moveTo(tip.x, tip.y)
+    .lineTo(left.x, left.y)
+    .lineTo(right.x, right.y)
+    .lineTo(tip.x, tip.y)
+    .fill({ color });
+}
+
+/** Leader line start on the badge edge toward the arrow tip. */
+function annotationLineStart(
+  anchor: Point,
+  tip: Point,
+  badgeHalfW: number,
+  badgeHalfH: number,
+): Point {
+  const dx = tip.x - anchor.x;
+  const dy = tip.y - anchor.y;
+  if (Math.hypot(dx, dy) < 1) return { ...anchor };
+  const scale = Math.max(
+    Math.abs(dx) / Math.max(badgeHalfW, 1),
+    Math.abs(dy) / Math.max(badgeHalfH, 1),
+  );
+  return { x: anchor.x + dx / scale, y: anchor.y + dy / scale };
+}
+
+export function drawAnnotation(
+  container: Container,
+  el: Extract<GardenElement, { type: 'annotation' }>,
+  style: PlanDrawStyle = 'garden',
+): void {
+  const arch = isArchitectural(style);
+  const lineColor = arch ? ARCH_STROKE : '#1e3a5f';
+  const badgeColor = arch ? ARCH_STROKE : '#1e40af';
+  const textStyle = arch ? ARCH_ANNOTATION_STYLE : ANNOTATION_STYLE;
+  const label = el.text.trim() || 'Note';
+
+  const text = new Text({ text: label, style: textStyle });
+  text.anchor.set(0.5, 0.5);
+  const padX = 8;
+  const padY = 5;
+  const badgeW = text.width + padX * 2;
+  const badgeH = text.height + padY * 2;
+  const halfW = badgeW / 2;
+  const halfH = badgeH / 2;
+
+  const lineFrom = annotationLineStart(el.anchor, el.tip, halfW, halfH);
+  const g = new Graphics();
+  g.moveTo(lineFrom.x, lineFrom.y)
+    .lineTo(el.tip.x, el.tip.y)
+    .stroke({ color: lineColor, width: arch ? 1.25 : 1.5 });
+  drawArrowhead(g, el.tip, lineFrom, arch ? 7 : 9, lineColor);
+  container.addChild(g);
+
+  const bg = new Graphics();
+  bg.roundRect(
+    el.anchor.x - halfW,
+    el.anchor.y - halfH,
+    badgeW,
+    badgeH,
+    4,
+  ).fill({ color: badgeColor });
+  text.position.set(el.anchor.x, el.anchor.y);
+  container.addChild(bg);
+  container.addChild(text);
 }
 
 export function drawDimension(

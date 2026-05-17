@@ -6,6 +6,7 @@ const DESKTOP_SHORTCUTS = [
   'Right-drag — pan',
   'Scroll — zoom',
   'Enter — finish shape',
+  'Annotation — arrow target, then label',
   'Del — delete selection',
   'Trees: B-01… · Bushes: S-01…',
   'Ctrl+Z / Ctrl+Shift+Z — undo / redo',

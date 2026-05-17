@@ -1,7 +1,12 @@
 import { Application, Container, Graphics, Sprite, Texture } from 'pixi.js';
 import type { Scene } from '../model/types';
 import { ELEMENT_DRAW_ORDER } from '../model/types';
-import { drawDimension, drawElement, drawPlant } from '../pixi/drawElements';
+import {
+  drawAnnotation,
+  drawDimension,
+  drawElement,
+  drawPlant,
+} from '../pixi/drawElements';
 import type { PlanDrawStyle } from '../pixi/drawStyle';
 import { drawPlotGrid } from '../pixi/drawPlotGrid';
 import { createNorthIndicatorOverlay } from '../pixi/drawNorthIndicator';
@@ -96,6 +101,10 @@ export async function renderSceneToCanvas(
       if (el.type === 'dimension') {
         const c = new Container();
         drawDimension(c, el, scene, style);
+        root.addChild(c);
+      } else if (el.type === 'annotation') {
+        const c = new Container();
+        drawAnnotation(c, el, style);
         root.addChild(c);
       } else if (el.type === 'tree' || el.type === 'bush') {
         const c = new Container();

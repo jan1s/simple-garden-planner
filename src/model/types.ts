@@ -76,12 +76,23 @@ export type DimensionElement = {
   offset: number;
 };
 
+export type AnnotationElement = {
+  type: 'annotation';
+  id: string;
+  /** Arrow tip — points at the feature on the plan */
+  tip: Point;
+  /** Text label position (leader attaches here) */
+  anchor: Point;
+  text: string;
+};
+
 export type GardenElement =
   | PolygonElement
   | PathElement
   | FenceElement
   | PlantElement
-  | DimensionElement;
+  | DimensionElement
+  | AnnotationElement;
 
 export type Background = {
   imageDataUrl: string;
@@ -98,7 +109,9 @@ export type Scene = {
   elements: GardenElement[];
 };
 
-export type LayerVisibility = Record<ElementType | 'dimension', boolean>;
+export type OverlayElementType = 'dimension' | 'annotation';
+
+export type LayerVisibility = Record<ElementType | OverlayElementType, boolean>;
 
 export type ToolId =
   | 'select'
@@ -111,9 +124,10 @@ export type ToolId =
   | 'tree'
   | 'bush'
   | 'dimension'
+  | 'annotation'
   | 'scale';
 
-export const ELEMENT_DRAW_ORDER: (ElementType | 'dimension')[] = [
+export const ELEMENT_DRAW_ORDER: (ElementType | OverlayElementType)[] = [
   'plot',
   'terrace',
   'path',
@@ -122,6 +136,7 @@ export const ELEMENT_DRAW_ORDER: (ElementType | 'dimension')[] = [
   'tree',
   'bush',
   'dimension',
+  'annotation',
 ];
 
 export const DEFAULT_LAYER_VISIBILITY: LayerVisibility = {
@@ -133,4 +148,5 @@ export const DEFAULT_LAYER_VISIBILITY: LayerVisibility = {
   tree: true,
   bush: true,
   dimension: true,
+  annotation: true,
 };
