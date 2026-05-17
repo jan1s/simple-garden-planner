@@ -46,8 +46,11 @@ type AppState = {
   scaleDraft: { a: Point | null; b: Point | null };
   statusMessage: string;
   draftActive: boolean;
+  /** Pixi viewport zoom (1 = 100%); used for on-screen scale bar. */
+  viewportScale: number;
 
   setActiveTool: (tool: ToolId) => void;
+  setViewportScale: (scale: number) => void;
   setDraftActive: (active: boolean) => void;
   setStatusMessage: (msg: string) => void;
   setSnapEnabled: (enabled: boolean) => void;
@@ -108,6 +111,9 @@ export const useSceneStore = create<AppState>()(
       ? 'Scene restored from browser storage'
       : 'Upload a reference image to get started',
     draftActive: false,
+    viewportScale: 1,
+
+    setViewportScale: (scale) => set({ viewportScale: scale }),
 
     setActiveTool: (tool) =>
       set({

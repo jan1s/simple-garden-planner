@@ -10,6 +10,11 @@ import {
 } from '../model/geometry';
 import { isPolygonLocked } from '../model/elements';
 import type { GardenElement, PlantElement, Scene } from '../model/types';
+import { isArchitectural, type PlanDrawStyle } from './drawStyle';
+
+const ARCH_STROKE = '#000000';
+const ARCH_FILL_LIGHT = '#f5f5f5';
+const ARCH_TEXT = '#000000';
 
 const DIM_STYLE = new TextStyle({
   fontFamily: 'system-ui, sans-serif',
@@ -35,6 +40,30 @@ const PLANT_COMMENT_STYLE = new TextStyle({
   align: 'center',
 });
 
+const ARCH_LABEL_STYLE = new TextStyle({
+  fontFamily: 'system-ui, sans-serif',
+  fontSize: 10,
+  fill: ARCH_TEXT,
+  fontWeight: '600',
+});
+
+const ARCH_COMMENT_STYLE = new TextStyle({
+  fontFamily: 'system-ui, sans-serif',
+  fontSize: 8,
+  fill: ARCH_TEXT,
+  fontStyle: 'italic',
+  wordWrap: true,
+  wordWrapWidth: 200,
+  align: 'center',
+});
+
+const ARCH_DIM_STYLE = new TextStyle({
+  fontFamily: 'system-ui, sans-serif',
+  fontSize: 12,
+  fill: ARCH_TEXT,
+  fontWeight: '600',
+});
+
 /** Pixi fill() expects #hex or number; plot/terrace use rgba() in defaults. */
 function fillStyle(color: string): { color: string; alpha?: number } {
   const rgba = color.match(
@@ -55,8 +84,10 @@ export function drawElement(
   g: Graphics,
   el: GardenElement,
   scene: Scene,
+  style: PlanDrawStyle = 'garden',
 ): void {
   const ppm = scene.pixelsPerMeter;
+  const arch = isArchitectural(style);
 
   switch (el.type) {
     case 'building':
@@ -64,19 +95,31 @@ export function drawElement(
     case 'terrace': {
       if (el.points.length < 2) return;
       const flat = el.points.flatMap((p) => [p.x, p.y]);
-      if (el.fill && el.points.length >= 3) {
-        g.poly(flat).fill(fillStyle(el.fill));
-      }
-      const strokeOpts = {
-        color: el.stroke.color,
-        width: el.stroke.width,
-        join: 'round' as const,
-        cap: 'round' as const,
-      };
-      if (el.type === 'plot' && isPolygonLocked(el)) {
-        g.poly(flat).stroke({ ...strokeOpts, width: el.stroke.width + 1 });
+      if (arch && el.points.length >= 3) {
+        if (el.type === 'building') {
+          g.poly(flat).fill({ color: ARCH_FILL_LIGHT });
+        }
+        g.poly(flat).stroke({
+          color: ARCH_STROKE,
+          width: el.type === 'plot' ? 2 : 1.5,
+          join: 'round',
+          cap: 'round',
+        });
       } else {
-        g.poly(flat).stroke(strokeOpts);
+        if (el.fill && el.points.length >= 3) {
+          g.poly(flat).fill(fillStyle(el.fill));
+        }
+        const strokeOpts = {
+          color: el.stroke.color,
+          width: el.stroke.width,
+          join: 'round' as const,
+          cap: 'round' as const,
+        };
+        if (el.type === 'plot' && isPolygonLocked(el)) {
+          g.poly(flat).stroke({ ...strokeOpts, width: el.stroke.width + 1 });
+        } else {
+          g.poly(flat).stroke(strokeOpts);
+        }
       }
       break;
     }
@@ -84,31 +127,48 @@ export function drawElement(
       if (el.points.length < 2) return;
       const halfW = metersToPixels(el.widthM, ppm) / 2;
       const ribbon = buildPathRibbon(el.points, halfW);
-      if (ribbon.length >= 3) {
-        g.poly(ribbon.flatMap((p) => [p.x, p.y])).fill(
-          fillStyle(el.color.startsWith('#') ? el.color : '#78716c'),
-        );
+      if (arch) {
+        if (ribbon.length >= 3) {
+          const ribbonFlat = ribbon.flatMap((p) => [p.x, p.y]);
+          g.poly(ribbonFlat).fill({ color: ARCH_FILL_LIGHT });
+          g.poly(ribbonFlat).stroke({
+            color: ARCH_STROKE,
+            width: 1,
+            cap: 'round',
+            join: 'round',
+          });
+        }
+      } else {
+        if (ribbon.length >= 3) {
+          g.poly(ribbon.flatMap((p) => [p.x, p.y])).fill(
+            fillStyle(el.color.startsWith('#') ? el.color : '#78716c'),
+          );
+        }
+        const pathFlat = el.points.flatMap((p) => [p.x, p.y]);
+        g.poly(pathFlat).stroke({
+          color: '#44403c',
+          width: 1,
+          cap: 'round',
+          join: 'round',
+        });
       }
-      const pathFlat = el.points.flatMap((p) => [p.x, p.y]);
-      g.poly(pathFlat).stroke({
-        color: '#44403c',
-        width: 1,
-        cap: 'round',
-        join: 'round',
-      });
       break;
     }
     case 'fence': {
       if (el.points.length < 2) return;
       const fenceFlat = el.points.flatMap((p) => [p.x, p.y]);
       g.poly(fenceFlat).stroke({
-        color: el.color,
-        width: 2,
+        color: arch ? ARCH_STROKE : el.color,
+        width: arch ? 1.5 : 2,
         cap: 'round',
         join: 'round',
       });
       for (const p of el.points) {
-        g.circle(p.x, p.y, 3).fill({ color: el.color });
+        if (arch) {
+          g.rect(p.x - 2, p.y - 2, 4, 4).stroke({ color: ARCH_STROKE, width: 1 });
+        } else {
+          g.circle(p.x, p.y, 3).fill({ color: el.color });
+        }
       }
       break;
     }
@@ -140,12 +200,69 @@ function drawLabelBadgeCentered(
   container.addChild(text);
 }
 
+function drawPlantArchitectural(
+  container: Container,
+  el: PlantElement,
+  scene: Scene,
+): void {
+  const ppm = scene.pixelsPerMeter;
+  const r = metersToPixels(el.sizeM, ppm) / 2;
+  const { x, y } = el.position;
+  const g = new Graphics();
+
+  if (el.type === 'tree') {
+    // Deciduous tree symbol: circle + center dot
+    g.circle(x, y, r).stroke({ color: ARCH_STROKE, width: 1.5 });
+    g.circle(x, y, Math.max(2, r * 0.12)).fill({ color: ARCH_STROKE });
+  } else {
+    // Shrub symbol: ellipse outline + stipple
+    g.ellipse(x, y, r, r * 0.72).stroke({ color: ARCH_STROKE, width: 1.25 });
+    const dots = 6;
+    for (let i = 0; i < dots; i++) {
+      const a = (i / dots) * Math.PI * 2;
+      const dx = Math.cos(a) * r * 0.45;
+      const dy = Math.sin(a) * r * 0.32;
+      g.circle(x + dx, y + dy, Math.max(1.5, r * 0.08)).fill({ color: ARCH_STROKE });
+    }
+  }
+
+  container.addChild(g);
+
+  const label = new Text({ text: el.label, style: ARCH_LABEL_STYLE });
+  label.anchor.set(0.5, 0);
+  if (el.type === 'tree') {
+    label.position.set(x, y + r + 5);
+  } else {
+    const ry = r * 0.72;
+    label.position.set(x, y + ry + 5);
+  }
+  container.addChild(label);
+
+  if (el.comment?.trim()) {
+    const comment = new Text({
+      text: el.comment.trim(),
+      style: ARCH_COMMENT_STYLE,
+    });
+    comment.anchor.set(0.5, 0);
+    const labelBottom =
+      el.type === 'tree' ? y + r + 5 + 14 : y + r * 0.72 + 5 + 14;
+    comment.position.set(x, labelBottom);
+    container.addChild(comment);
+  }
+}
+
 /** Draws plant shape, centered id badge, and optional comment below. */
 export function drawPlant(
   container: Container,
   el: PlantElement,
   scene: Scene,
+  style: PlanDrawStyle = 'garden',
 ): void {
+  if (isArchitectural(style)) {
+    drawPlantArchitectural(container, el, scene);
+    return;
+  }
+
   const ppm = scene.pixelsPerMeter;
   const opacity = el.opacity ?? 1;
   const r = metersToPixels(el.sizeM, ppm) / 2;
@@ -195,11 +312,14 @@ export function drawDimension(
   container: Container,
   el: Extract<GardenElement, { type: 'dimension' }>,
   scene: Scene,
+  style: PlanDrawStyle = 'garden',
 ): void {
   const ppm = scene.pixelsPerMeter;
   const lenPx = distance(el.a, el.b);
   const lenM = pixelsToMeters(lenPx, ppm);
   const label = lenM != null ? formatMeters(lenM) : `${lenPx.toFixed(0)} px`;
+  const lineColor = isArchitectural(style) ? ARCH_STROKE : '#1e3a5f';
+  const textStyle = isArchitectural(style) ? ARCH_DIM_STYLE : DIM_STYLE;
 
   const off = perpendicularOffset(el.a, el.b, el.offset);
   const aOff = { x: el.a.x + off.x, y: el.a.y + off.y };
@@ -213,18 +333,18 @@ export function drawDimension(
     .lineTo(bOff.x, bOff.y)
     .moveTo(aOff.x, aOff.y)
     .lineTo(bOff.x, bOff.y)
-    .stroke({ color: '#1e3a5f', width: 1.5 });
+    .stroke({ color: lineColor, width: 1.5 });
 
   const tick = perpendicularOffset(aOff, bOff, 6);
   g.moveTo(aOff.x - tick.x, aOff.y - tick.y)
     .lineTo(aOff.x + tick.x, aOff.y + tick.y)
     .moveTo(bOff.x - tick.x, bOff.y - tick.y)
     .lineTo(bOff.x + tick.x, bOff.y + tick.y)
-    .stroke({ color: '#1e3a5f', width: 1.5 });
+    .stroke({ color: lineColor, width: 1.5 });
 
   container.addChild(g);
 
-  const text = new Text({ text: label, style: DIM_STYLE });
+  const text = new Text({ text: label, style: textStyle });
   text.anchor.set(0.5);
   text.position.set(mid.x, mid.y - 14);
   container.addChild(text);

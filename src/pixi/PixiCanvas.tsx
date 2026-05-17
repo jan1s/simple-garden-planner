@@ -6,6 +6,7 @@ import type { Point } from '../model/types';
 import { SceneRenderer } from './SceneRenderer';
 import { registerCanvasActions } from './canvasActions';
 import { ToolController } from './interaction/ToolController';
+import { useSceneStore } from '../store/sceneStore';
 
 export function PixiCanvas() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -56,6 +57,12 @@ export function PixiCanvas() {
 
       viewport.moveCenter(0, 0);
 
+      const syncViewportScale = () => {
+        useSceneStore.getState().setViewportScale(viewport.scale.x);
+      };
+      viewport.on('zoomed', syncViewportScale);
+      syncViewportScale();
+
       const getWorldPoint = (e: FederatedPointerEvent): Point =>
         viewport.toWorld(e.global) as Point;
 
@@ -87,6 +94,7 @@ export function PixiCanvas() {
 
     return () => {
       destroyed = true;
+      useSceneStore.getState().setViewportScale(1);
       registerCanvasActions(null);
       resizeObserver?.disconnect();
       toolController?.destroy();

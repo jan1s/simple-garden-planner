@@ -1,5 +1,6 @@
 import { useSceneStore } from '../store/sceneStore';
 import type { LayerVisibility } from '../model/types';
+import { LegalDisclaimer } from './LegalDisclaimer';
 
 const LAYER_LABELS: { key: keyof LayerVisibility; label: string }[] = [
   { key: 'plot', label: 'Plot outline' },
@@ -12,7 +13,7 @@ const LAYER_LABELS: { key: keyof LayerVisibility; label: string }[] = [
   { key: 'dimension', label: 'Dimensions' },
 ];
 
-export function LayersPanel() {
+export function SettingsPanel() {
   const visibility = useSceneStore((s) => s.layerVisibility);
   const toggleLayer = useSceneStore((s) => s.toggleLayer);
   const sceneName = useSceneStore((s) => s.scene.name);
@@ -20,7 +21,7 @@ export function LayersPanel() {
   const ppm = useSceneStore((s) => s.scene.pixelsPerMeter);
 
   return (
-    <aside className="panel layers-panel">
+    <div className="panel settings-panel">
       <h2>Project</h2>
       <label className="field">
         Name
@@ -33,10 +34,11 @@ export function LayersPanel() {
       <p className="scale-info">
         {ppm
           ? `Scale: ${ppm.toFixed(1)} px/m`
-          : 'Scale: not set — use Scale tool'}
+          : 'Scale not set — use Scale tool on canvas'}
       </p>
 
       <h2>Layers</h2>
+      <p className="field-hint">Toggle visibility of element types on the plan.</p>
       <ul className="layer-list">
         {LAYER_LABELS.map(({ key, label }) => (
           <li key={key}>
@@ -52,28 +54,8 @@ export function LayersPanel() {
         ))}
       </ul>
 
-      <div className="help-box help-box-desktop">
-        <strong>Shortcuts</strong>
-        <ul>
-          <li>Space + drag — pan</li>
-          <li>Right-drag — pan</li>
-          <li>Scroll — zoom</li>
-          <li>Enter — finish shape</li>
-          <li>Del — delete</li>
-          <li>Trees: B-01… Bushes: S-01…</li>
-          <li>Ctrl+Z — undo</li>
-        </ul>
-      </div>
-
-      <div className="help-box help-box-mobile">
-        <strong>Touch tips</strong>
-        <ul>
-          <li>Pan tool or two-finger pinch to move and zoom</li>
-          <li>Tap Done to finish a shape</li>
-          <li>Layers / Props buttons open side panels</li>
-          <li>Menu — upload, save, export</li>
-        </ul>
-      </div>
-    </aside>
+      <h2>Legal</h2>
+      <LegalDisclaimer variant="full" />
+    </div>
   );
 }

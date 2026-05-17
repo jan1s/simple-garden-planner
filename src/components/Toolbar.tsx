@@ -3,19 +3,37 @@ import { loadImageFile } from '../model/serialize';
 import { finishCanvasDraft } from '../pixi/canvasActions';
 import { useSceneStore } from '../store/sceneStore';
 import type { ToolId } from '../model/types';
+import { IconButton } from './IconButton';
+import { ToolbarIcon, type ToolbarIconId } from './icons/ToolbarIcons';
 
-const TOOLS: { id: ToolId; label: string; short: string }[] = [
-  { id: 'select', label: 'Select', short: 'Sel' },
-  { id: 'pan', label: 'Pan', short: 'Pan' },
-  { id: 'scale', label: 'Scale', short: 'Sc' },
-  { id: 'dimension', label: 'Dimension', short: 'Dim' },
-  { id: 'plot', label: 'Plot', short: 'Plt' },
-  { id: 'building', label: 'Building', short: 'Bld' },
-  { id: 'terrace', label: 'Terrace', short: 'Ter' },
-  { id: 'path', label: 'Path', short: 'Pth' },
-  { id: 'fence', label: 'Fence', short: 'Fnc' },
-  { id: 'tree', label: 'Tree', short: 'Tr' },
-  { id: 'bush', label: 'Bush', short: 'Bu' },
+type ToolDef = {
+  id: ToolId;
+  label: string;
+  icon: ToolbarIconId;
+};
+
+const TOOL_GROUPS: ToolDef[][] = [
+  [
+    { id: 'select', label: 'Select', icon: 'select' },
+    { id: 'pan', label: 'Pan', icon: 'pan' },
+  ],
+  [
+    { id: 'scale', label: 'Scale', icon: 'scale' },
+    { id: 'dimension', label: 'Dimension', icon: 'dimension' },
+  ],
+  [
+    { id: 'plot', label: 'Plot', icon: 'plot' },
+    { id: 'building', label: 'Building', icon: 'building' },
+    { id: 'terrace', label: 'Terrace', icon: 'terrace' },
+  ],
+  [
+    { id: 'path', label: 'Path', icon: 'path' },
+    { id: 'fence', label: 'Fence', icon: 'fence' },
+  ],
+  [
+    { id: 'tree', label: 'Tree', icon: 'tree' },
+    { id: 'bush', label: 'Bush', icon: 'bush' },
+  ],
 ];
 
 function ToolButtons({ className }: { className?: string }) {
@@ -24,20 +42,50 @@ function ToolButtons({ className }: { className?: string }) {
 
   return (
     <div className={className}>
-      {TOOLS.map((tool) => (
-        <button
-          key={tool.id}
-          type="button"
-          className={`tool-btn ${activeTool === tool.id ? 'active' : ''}`}
-          onClick={() => setActiveTool(tool.id)}
-          title={tool.label}
-          aria-label={tool.label}
+      {TOOL_GROUPS.map((group, gi) => (
+        <div
+          key={gi}
+          className="tool-group"
+          role="group"
+          aria-label="Drawing tools"
         >
-          <span className="tool-label-full">{tool.label}</span>
-          <span className="tool-label-short">{tool.short}</span>
-        </button>
+          {group.map((tool) => (
+            <IconButton
+              key={tool.id}
+              icon={tool.icon}
+              label={tool.label}
+              className={activeTool === tool.id ? 'active' : ''}
+              onClick={() => setActiveTool(tool.id)}
+            />
+          ))}
+        </div>
       ))}
     </div>
+  );
+}
+
+function OverflowMenuItem({
+  icon,
+  label,
+  onClick,
+  disabled,
+}: {
+  icon: ToolbarIconId;
+  label: string;
+  onClick?: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      className="overflow-row"
+      role="menuitem"
+      onClick={onClick}
+      disabled={disabled}
+    >
+      <ToolbarIcon name={icon} className="overflow-row-icon" />
+      <span>{label}</span>
+    </button>
   );
 }
 
@@ -47,6 +95,8 @@ export function Toolbar({
   onSaveClick,
   onLoadClick,
   onNewClick,
+  onSettingsClick,
+  settingsOpen = false,
   menuOpen,
   onMenuToggle,
   onMenuClose,
@@ -56,6 +106,8 @@ export function Toolbar({
   onSaveClick: () => void;
   onLoadClick: () => void;
   onNewClick: () => void;
+  onSettingsClick: () => void;
+  settingsOpen?: boolean;
   menuOpen: boolean;
   onMenuToggle: () => void;
   onMenuClose: () => void;
@@ -73,6 +125,7 @@ export function Toolbar({
   const redo = useSceneStore((s) => s.redo);
 
   const menuRef = useRef<HTMLDivElement>(null);
+  const uploadRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -85,7 +138,7 @@ export function Toolbar({
     return () => document.removeEventListener('pointerdown', onDocClick);
   }, [menuOpen, onMenuClose]);
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUploadFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     try {
@@ -98,6 +151,8 @@ export function Toolbar({
     e.target.value = '';
     onMenuClose();
   };
+
+  const triggerUpload = () => uploadRef.current?.click();
 
   return (
     <>
@@ -112,97 +167,107 @@ export function Toolbar({
         <ToolButtons className="toolbar-tools toolbar-tools-desktop" />
 
         {draftActive && (
-          <button
-            type="button"
-            className="btn btn-done"
+          <IconButton
+            icon="check"
+            label="Finish shape"
+            variant="done"
+            showLabel
+            className="btn-done-text"
             onClick={() => finishCanvasDraft()}
-          >
-            Done
-          </button>
+          />
         )}
 
         <div className="toolbar-actions toolbar-actions-desktop">
-          <label className="btn btn-secondary">
-            Upload image
-            <input
-              type="file"
-              accept="image/jpeg,image/png"
-              hidden
-              onChange={handleUpload}
-            />
-          </label>
+          <input
+            ref={uploadRef}
+            type="file"
+            accept="image/jpeg,image/png"
+            hidden
+            onChange={handleUploadFile}
+          />
+          <IconButton icon="image-plus" label="Upload image" onClick={triggerUpload} />
 
           {background && (
-            <label className="opacity-control">
-              Opacity
+            <label className="toolbar-opacity" title="Background opacity">
+              <ToolbarIcon name="image-plus" className="icon-btn-svg icon-muted" />
               <input
                 type="range"
                 min={0.1}
                 max={1}
                 step={0.05}
                 value={background.opacity}
-                onChange={(e) => setBackgroundOpacity(parseFloat(e.target.value))}
+                onChange={(e) =>
+                  setBackgroundOpacity(parseFloat(e.target.value))
+                }
+                aria-label="Background opacity"
               />
             </label>
           )}
 
-          <label className="snap-toggle">
-            <input
-              type="checkbox"
-              checked={snapEnabled}
-              onChange={(e) => setSnapEnabled(e.target.checked)}
-            />
-            Snap grid
-          </label>
+          <IconButton
+            icon="grid"
+            label={snapEnabled ? 'Snap grid on' : 'Snap grid off'}
+            className={snapEnabled ? 'active' : ''}
+            onClick={() => setSnapEnabled(!snapEnabled)}
+          />
 
-          <button type="button" className="btn" onClick={undo} disabled={past.length === 0}>
-            Undo
-          </button>
-          <button type="button" className="btn" onClick={redo} disabled={future.length === 0}>
-            Redo
-          </button>
-          <button type="button" className="btn" onClick={onSaveClick}>
-            Save JSON
-          </button>
-          <button type="button" className="btn" onClick={onLoadClick}>
-            Load JSON
-          </button>
-          <button type="button" className="btn btn-secondary" onClick={onNewClick}>
-            New
-          </button>
-          <button type="button" className="btn btn-secondary" onClick={onPlantsClick}>
-            Plants
-          </button>
-          <button type="button" className="btn btn-primary" onClick={onExportClick}>
-            Export
-          </button>
+          <span className="toolbar-divider" aria-hidden />
+
+          <IconButton
+            icon="undo"
+            label="Undo"
+            onClick={undo}
+            disabled={past.length === 0}
+          />
+          <IconButton
+            icon="redo"
+            label="Redo"
+            onClick={redo}
+            disabled={future.length === 0}
+          />
+
+          <span className="toolbar-divider" aria-hidden />
+
+          <IconButton
+            icon="settings"
+            label="Project settings"
+            className={settingsOpen ? 'active' : ''}
+            onClick={onSettingsClick}
+          />
+
+          <IconButton icon="save" label="Save JSON" onClick={onSaveClick} />
+          <IconButton icon="folder-open" label="Load JSON" onClick={onLoadClick} />
+          <IconButton icon="file-plus" label="New scene" onClick={onNewClick} />
+          <IconButton icon="table" label="Plants table" onClick={onPlantsClick} />
+          <IconButton
+            icon="download"
+            label="Export"
+            variant="primary"
+            onClick={onExportClick}
+          />
         </div>
 
         <div className="toolbar-menu-wrap" ref={menuRef}>
-          <button
-            type="button"
-            className="btn btn-menu"
+          <IconButton
+            icon="menu"
+            label="Menu"
+            className="btn-menu"
             onClick={onMenuToggle}
             aria-expanded={menuOpen}
             aria-haspopup="true"
-          >
-            Menu
-          </button>
+          />
           {menuOpen && (
             <div className="toolbar-overflow" role="menu">
-              <label className="btn btn-secondary overflow-item">
-                Upload image
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png"
-                  hidden
-                  onChange={handleUpload}
-                />
-              </label>
+              <OverflowMenuItem
+                icon="image-plus"
+                label="Upload image"
+                onClick={triggerUpload}
+              />
 
               {background && (
-                <label className="opacity-control overflow-item">
-                  Opacity
+                <label className="overflow-row overflow-row-range">
+                  <ToolbarIcon name="image-plus" className="overflow-row-icon" />
+                  <span>Opacity</span>
                   <input
                     type="range"
                     min={0.1}
@@ -216,81 +281,64 @@ export function Toolbar({
                 </label>
               )}
 
-              <label className="snap-toggle overflow-item">
-                <input
-                  type="checkbox"
-                  checked={snapEnabled}
-                  onChange={(e) => setSnapEnabled(e.target.checked)}
-                />
-                Snap grid
-              </label>
+              <OverflowMenuItem
+                icon="grid"
+                label={snapEnabled ? 'Snap grid on' : 'Snap grid off'}
+                onClick={() => setSnapEnabled(!snapEnabled)}
+              />
 
-              <button
-                type="button"
-                className="btn overflow-item"
+              <OverflowMenuItem
+                icon="undo"
+                label="Undo"
+                disabled={past.length === 0}
                 onClick={() => {
                   undo();
                   onMenuClose();
                 }}
-                disabled={past.length === 0}
-              >
-                Undo
-              </button>
-              <button
-                type="button"
-                className="btn overflow-item"
+              />
+              <OverflowMenuItem
+                icon="redo"
+                label="Redo"
+                disabled={future.length === 0}
                 onClick={() => {
                   redo();
                   onMenuClose();
                 }}
-                disabled={future.length === 0}
-              >
-                Redo
-              </button>
-              <button
-                type="button"
-                className="btn overflow-item"
+              />
+              <OverflowMenuItem
+                icon="settings"
+                label="Project settings"
+                onClick={() => {
+                  onSettingsClick();
+                  onMenuClose();
+                }}
+              />
+              <OverflowMenuItem
+                icon="save"
+                label="Save JSON"
                 onClick={() => {
                   onSaveClick();
                   onMenuClose();
                 }}
-              >
-                Save JSON
-              </button>
-              <button
-                type="button"
-                className="btn overflow-item"
+              />
+              <OverflowMenuItem
+                icon="folder-open"
+                label="Load JSON"
                 onClick={() => {
                   onLoadClick();
                   onMenuClose();
                 }}
-              >
-                Load JSON
-              </button>
-              <button
-                type="button"
-                className="btn overflow-item"
+              />
+              <OverflowMenuItem
+                icon="file-plus"
+                label="New scene"
                 onClick={() => {
                   onNewClick();
                   onMenuClose();
                 }}
-              >
-                New
-              </button>
-              <button
-                type="button"
-                className="btn overflow-item"
-                onClick={onPlantsClick}
-              >
-                Plants
-              </button>
-              <button
-                type="button"
-                className="btn btn-primary overflow-item"
-                onClick={onExportClick}
-              >
-                Export
-              </button>
+              />
+              <OverflowMenuItem icon="table" label="Plants table" onClick={onPlantsClick} />
+              <OverflowMenuItem icon="download" label="Export" onClick={onExportClick} />
             </div>
           )}
         </div>

@@ -43,6 +43,12 @@ export type GridCell = {
   corners: [Point, Point, Point, Point];
 };
 
+export type GridEdgeLabel = {
+  kind: 'col' | 'row';
+  text: string;
+  position: Point;
+};
+
 type GridAxes = {
   origin: Point;
   ex: Point;
@@ -266,6 +272,56 @@ export function computePlotGridCells(
   }
 
   return cells;
+}
+
+/** Column letters (A, B, …) and row numbers (1, 2, …) along the grid bounding edges. */
+export function computePlotGridEdgeLabels(
+  plot: PolygonElement,
+  grid: PlotGrid,
+  pixelsPerMeter: number | null,
+): GridEdgeLabel[] {
+  const cells = computePlotGridCells(plot, grid, pixelsPerMeter);
+  if (cells.length === 0) return [];
+
+  const axes = buildAxes(plot, grid, pixelsPerMeter);
+  if (!axes) return [];
+
+  const locals = plot.points.map((p) => worldToGridLocal(p, axes));
+  let minX = Infinity;
+  let minY = Infinity;
+  for (const l of locals) {
+    minX = Math.min(minX, l.x);
+    minY = Math.min(minY, l.y);
+  }
+
+  const labelPad = axes.spacingPx * 0.55;
+  const colSet = new Set(cells.map((c) => c.col));
+  const rowSet = new Set(cells.map((c) => c.row));
+  const labels: GridEdgeLabel[] = [];
+
+  for (const col of [...colSet].sort((a, b) => a - b)) {
+    labels.push({
+      kind: 'col',
+      text: colToLetter(col),
+      position: gridLocalToWorld(
+        { x: (col + 0.5) * axes.spacingPx, y: minY - labelPad },
+        axes,
+      ),
+    });
+  }
+
+  for (const row of [...rowSet].sort((a, b) => a - b)) {
+    labels.push({
+      kind: 'row',
+      text: String(row + 1),
+      position: gridLocalToWorld(
+        { x: minX - labelPad, y: (row + 0.5) * axes.spacingPx },
+        axes,
+      ),
+    });
+  }
+
+  return labels;
 }
 
 /** Bed cell name (e.g. A1) at a world position, or empty if outside grid cells. */

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { exportPdf, type PaperSize } from '../export/exportPdf';
 import { exportPng } from '../export/exportPng';
 import { useSceneStore } from '../store/sceneStore';
+import { LegalDisclaimer } from './LegalDisclaimer';
 
 export function ExportModal({ onClose }: { onClose: () => void }) {
   const scene = useSceneStore((s) => s.scene);
@@ -58,6 +59,13 @@ export function ExportModal({ onClose }: { onClose: () => void }) {
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <h2>Export plan</h2>
 
+        <p className="export-hint">
+          Exports include two views: a colored garden plan and a black-and-white
+          architectural sheet. Both include a scale bar when the scene is
+          calibrated (Scale tool). Paths, labels, dimensions, and grid are
+          included in the crop.
+        </p>
+
         <label className="field">
           Paper size (PDF)
           <select value={paper} onChange={(e) => setPaper(e.target.value as PaperSize)}>
@@ -86,6 +94,8 @@ export function ExportModal({ onClose }: { onClose: () => void }) {
 
         {error && <p className="error-text">{error}</p>}
 
+        <LegalDisclaimer variant="full" className="export-disclaimer" />
+
         <div className="modal-actions">
           <button type="button" className="btn" onClick={onClose} disabled={exporting}>
             Cancel
@@ -96,7 +106,7 @@ export function ExportModal({ onClose }: { onClose: () => void }) {
             onClick={handlePng}
             disabled={exporting}
           >
-            Export PNG
+            PNG (2 files)
           </button>
           <button
             type="button"
@@ -104,7 +114,7 @@ export function ExportModal({ onClose }: { onClose: () => void }) {
             onClick={handlePdf}
             disabled={exporting}
           >
-            Export PDF
+            PDF (2 pages)
           </button>
         </div>
       </div>
