@@ -4,6 +4,8 @@ A browser-based garden planning tool. Draw your plot on a reference photo, place
 
 All data stays in your browser (localStorage + optional JSON/CSV files). No account required.
 
+**Live demo:** https://jan1s.github.io/simple-garden-planner/
+
 ## Features
 
 - **Reference image** — Upload JPG/PNG aerial or site photos (auto-resized for performance)
@@ -46,6 +48,20 @@ Open the URL shown in the terminal (usually `http://localhost:5173`).
 
 ```bash
 npm run build
+npm run preview
+```
+
+### GitHub Pages
+
+Pushes to `main` deploy automatically via GitHub Actions.
+
+1. In the repo on GitHub: **Settings → Pages → Build and deployment** → Source: **GitHub Actions**
+2. After the workflow runs, the app is at: https://jan1s.github.io/simple-garden-planner/
+
+Local build matching Pages (subpath `/simple-garden-planner/`):
+
+```bash
+npm run build:pages
 npm run preview
 ```
 
