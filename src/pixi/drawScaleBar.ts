@@ -11,6 +11,9 @@ const SCALE_LABEL_STYLE = new TextStyle({
 
 const NICE_METERS = [0.5, 1, 2, 5, 10, 20, 50, 100, 200];
 
+/** Screen-space height from baseline to top of label (ticks + text). */
+export const EXPORT_SCALE_BAR_HEIGHT = 28;
+
 /** Canvas scale bar: fixed ~targetScreenPx on screen; length in meters changes when zooming. */
 export function scaleBarForViewport(
   pixelsPerMeter: number,

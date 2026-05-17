@@ -14,8 +14,8 @@ import type { GardenElement, Point, Scene } from '../model/types';
 
 const MIN_EXPORT_EXTENT = 80;
 
-/** World-space margin around all content. */
-const BOUNDS_MARGIN_PX = 24;
+const DEFAULT_BOUNDS_MARGIN_PX = 24;
+const ARCH_BOUNDS_MARGIN_PX = 40;
 
 function expandMinExtent(bounds: {
   minX: number;
@@ -68,15 +68,17 @@ function collectElementPoints(
     case 'tree':
     case 'bush': {
       const r = metersToPixels(el.sizeM, ppm) / 2;
-      const below = el.type === 'tree' ? r + 22 : r * 0.72 + 22;
+      const ry = el.type === 'tree' ? r : r * 0.72;
+      const belowLabel = ry + 5 + 16;
+      const below = belowLabel + (el.comment?.trim() ? 40 : 0);
       const pts: Point[] = [
-        { x: el.position.x - r - 8, y: el.position.y - r - 8 },
-        { x: el.position.x + r + 8, y: el.position.y + below },
+        { x: el.position.x - r - 12, y: el.position.y - r - 12 },
+        { x: el.position.x + r + 12, y: el.position.y + below },
       ];
       if (el.comment?.trim()) {
         pts.push(
-          { x: el.position.x - 105, y: el.position.y + below },
-          { x: el.position.x + 105, y: el.position.y + below + 36 },
+          { x: el.position.x - 110, y: el.position.y + belowLabel },
+          { x: el.position.x + 110, y: el.position.y + below },
         );
       }
       return pts;
@@ -148,9 +150,15 @@ export function computeExportBounds(
     /** Include reference image rectangle in bounds (even if not drawn). */
     includeBackground?: boolean;
     includeDimensions?: boolean;
+    /** Extra world-space margin around content. */
+    marginPx?: number;
   } = {},
 ): { minX: number; minY: number; maxX: number; maxY: number } {
-  const { includeBackground = true, includeDimensions = true } = options;
+  const {
+    includeBackground = true,
+    includeDimensions = true,
+    marginPx = DEFAULT_BOUNDS_MARGIN_PX,
+  } = options;
 
   const allPoints: Point[] = scene.elements.flatMap((el) =>
     collectElementPoints(el, scene, includeDimensions),
@@ -177,11 +185,12 @@ export function computeExportBounds(
 
   bounds = expandMinExtent(bounds);
 
-  const margin = BOUNDS_MARGIN_PX;
   return {
-    minX: bounds.minX - margin,
-    minY: bounds.minY - margin,
-    maxX: bounds.maxX + margin,
-    maxY: bounds.maxY + margin,
+    minX: bounds.minX - marginPx,
+    minY: bounds.minY - marginPx,
+    maxX: bounds.maxX + marginPx,
+    maxY: bounds.maxY + marginPx,
   };
 }
+
+export { ARCH_BOUNDS_MARGIN_PX };

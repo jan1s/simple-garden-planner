@@ -4,13 +4,15 @@ import { renderSceneToCanvas, type ExportOptions } from './renderScene';
 
 export type PaperSize = 'a4' | 'a3';
 
-const PAPER_MM: Record<PaperSize, { w: number; h: number }> = {
-  a4: { w: 210, h: 297 },
-  a3: { w: 297, h: 420 },
-};
-
 function slug(name: string): string {
   return name.replace(/\s+/g, '-').toLowerCase() || 'garden';
+}
+
+/** Use portrait when the plan is taller than wide (typical garden photos). */
+export function canvasPdfOrientation(
+  canvas: HTMLCanvasElement,
+): 'portrait' | 'landscape' {
+  return canvas.height > canvas.width ? 'portrait' : 'landscape';
 }
 
 function fitImageOnPage(
@@ -33,18 +35,13 @@ function addPlanPage(
   canvas: HTMLCanvasElement,
   title: string,
   scene: Scene,
-  paper: PaperSize,
-  isFirstPage: boolean,
 ): void {
-  const { w, h } = PAPER_MM[paper];
-  if (!isFirstPage) {
-    pdf.addPage([w, h], 'landscape');
-  }
-
+  const pageW = pdf.internal.pageSize.getWidth();
+  const pageH = pdf.internal.pageSize.getHeight();
   const margin = 12;
   const titleH = 18;
-  const imgW = w - margin * 2;
-  const imgH = h - margin * 2 - titleH;
+  const imgW = pageW - margin * 2;
+  const imgH = pageH - margin * 2 - titleH;
   const { drawW, drawH } = fitImageOnPage(canvas, imgW, imgH);
   const x = margin + (imgW - drawW) / 2;
   const y = margin + titleH;
@@ -85,22 +82,19 @@ export async function exportPdf(
     includeBackground: false,
   });
 
-  const { w, h } = PAPER_MM[paper];
+  const gardenOrient = canvasPdfOrientation(gardenCanvas);
+  const archOrient = canvasPdfOrientation(archCanvas);
+
   const pdf = new jsPDF({
-    orientation: 'landscape',
+    orientation: gardenOrient,
     unit: 'mm',
-    format: [w, h],
+    format: paper,
   });
 
-  addPlanPage(pdf, gardenCanvas, scene.name, scene, paper, true);
-  addPlanPage(
-    pdf,
-    archCanvas,
-    `${scene.name} — Architectural`,
-    scene,
-    paper,
-    false,
-  );
+  addPlanPage(pdf, gardenCanvas, scene.name, scene);
+
+  pdf.addPage(paper, archOrient === 'portrait' ? 'p' : 'l');
+  addPlanPage(pdf, archCanvas, `${scene.name} — Architectural`, scene);
 
   pdf.save(`${slug(scene.name)}-plan.pdf`);
 }

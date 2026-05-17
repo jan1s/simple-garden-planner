@@ -10,8 +10,11 @@ import {
 import type { PlanDrawStyle } from '../pixi/drawStyle';
 import { drawPlotGrid } from '../pixi/drawPlotGrid';
 import { createNorthIndicatorOverlay } from '../pixi/drawNorthIndicator';
-import { createScaleBarOverlay } from '../pixi/drawScaleBar';
-import { computeExportBounds } from './exportBounds';
+import {
+  createScaleBarOverlay,
+  EXPORT_SCALE_BAR_HEIGHT,
+} from '../pixi/drawScaleBar';
+import { ARCH_BOUNDS_MARGIN_PX, computeExportBounds } from './exportBounds';
 
 export type ExportOptions = {
   scale: number;
@@ -25,9 +28,19 @@ export type ExportOptions = {
 export const EXPORT_SCALE_BAR_PX = 400;
 
 function exportScreenInsets(arch: boolean, hasScale: boolean) {
+  const scaleBarBlock = hasScale ? EXPORT_SCALE_BAR_HEIGHT + 20 : 0;
+
+  if (arch) {
+    return {
+      top: 48,
+      right: 48,
+      bottom: scaleBarBlock + 16,
+      left: 20,
+    };
+  }
   return {
-    top: arch ? 56 : 28,
-    right: arch ? 56 : 28,
+    top: 28,
+    right: 28,
     bottom: hasScale ? 40 : 28,
     left: hasScale ? EXPORT_SCALE_BAR_PX + 32 : 28,
   };
@@ -51,23 +64,24 @@ export async function renderSceneToCanvas(
   await document.fonts.ready;
 
   const bounds = computeExportBounds(scene, {
-    includeBackground: (includeBackground || arch) && !!scene.background,
+    includeBackground: !arch && includeBackground && !!scene.background,
     includeDimensions,
+    marginPx: arch ? ARCH_BOUNDS_MARGIN_PX : undefined,
   });
   const contentW = bounds.maxX - bounds.minX;
   const contentH = bounds.maxY - bounds.minY;
 
+  const scaleBarMinW =
+    arch && hasScale ? EXPORT_SCALE_BAR_PX + insets.left + padding * 2 + 16 : 0;
+
   const width = Math.max(
     100,
-    Math.ceil(
-      contentW * scale + insets.left + insets.right + padding * 2,
-    ),
+    Math.ceil(contentW * scale + insets.left + insets.right + padding * 2),
+    scaleBarMinW,
   );
   const height = Math.max(
     100,
-    Math.ceil(
-      contentH * scale + insets.top + insets.bottom + padding * 2,
-    ),
+    Math.ceil(contentH * scale + insets.top + insets.bottom + padding * 2),
   );
 
   const app = new Application();
@@ -132,9 +146,10 @@ export async function renderSceneToCanvas(
   }
 
   if (hasScale) {
+    const scaleBarBaselineY = height - padding;
     const scaleBar = createScaleBarOverlay(
-      padding + 8,
-      height - padding - 8,
+      insets.left + padding + 8,
+      scaleBarBaselineY,
       scene,
       EXPORT_SCALE_BAR_PX,
     );

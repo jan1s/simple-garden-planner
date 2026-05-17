@@ -67,14 +67,14 @@ const ARCH_DIM_STYLE = new TextStyle({
 const ANNOTATION_STYLE = new TextStyle({
   fontFamily: 'system-ui, sans-serif',
   fontSize: 12,
-  fill: '#1e3a5f',
+  fill: '#000000',
   fontWeight: '600',
 });
 
 const ARCH_ANNOTATION_STYLE = new TextStyle({
   fontFamily: 'system-ui, sans-serif',
   fontSize: 11,
-  fill: ARCH_TEXT,
+  fill: '#000000',
   fontWeight: '600',
 });
 
@@ -369,8 +369,7 @@ export function drawAnnotation(
   style: PlanDrawStyle = 'garden',
 ): void {
   const arch = isArchitectural(style);
-  const lineColor = arch ? ARCH_STROKE : '#1e3a5f';
-  const badgeColor = arch ? ARCH_STROKE : '#1e40af';
+  const strokeColor = '#000000';
   const textStyle = arch ? ARCH_ANNOTATION_STYLE : ANNOTATION_STYLE;
   const label = el.text.trim() || 'Note';
 
@@ -387,8 +386,8 @@ export function drawAnnotation(
   const g = new Graphics();
   g.moveTo(lineFrom.x, lineFrom.y)
     .lineTo(el.tip.x, el.tip.y)
-    .stroke({ color: lineColor, width: arch ? 1.25 : 1.5 });
-  drawArrowhead(g, el.tip, lineFrom, arch ? 7 : 9, lineColor);
+    .stroke({ color: strokeColor, width: arch ? 1.25 : 1.5 });
+  drawArrowhead(g, el.tip, lineFrom, arch ? 7 : 9, strokeColor);
   container.addChild(g);
 
   const bg = new Graphics();
@@ -398,7 +397,9 @@ export function drawAnnotation(
     badgeW,
     badgeH,
     4,
-  ).fill({ color: badgeColor });
+  )
+    .fill({ color: '#ffffff' })
+    .stroke({ color: strokeColor, width: 1 });
   text.position.set(el.anchor.x, el.anchor.y);
   container.addChild(bg);
   container.addChild(text);
