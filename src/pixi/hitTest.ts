@@ -1,5 +1,21 @@
 import { HIT_TOLERANCE } from '../model/defaults';
 import {
+  ELEMENT_HIT_SCREEN_PX,
+  VERTEX_HIT_SCREEN_PX,
+  isCoarsePointer,
+  worldTolerance,
+} from '../utils/touch';
+
+export function hitToleranceForViewport(viewportScale: number): number {
+  const screenPx = isCoarsePointer() ? ELEMENT_HIT_SCREEN_PX : 14;
+  return worldTolerance(screenPx, viewportScale);
+}
+
+export function vertexHitToleranceForViewport(viewportScale: number): number {
+  const screenPx = isCoarsePointer() ? VERTEX_HIT_SCREEN_PX : 14;
+  return worldTolerance(screenPx, viewportScale);
+}
+import {
   distance,
   minDistanceToPolyline,
   pointInPolygon,
@@ -59,13 +75,14 @@ export function findTopElementAt(
   point: Point,
   elements: GardenElement[],
   visibility: Record<string, boolean>,
+  tolerance = HIT_TOLERANCE,
 ): GardenElement | null {
   const order = [...ELEMENT_DRAW_ORDER].reverse();
   for (const type of order) {
     if (visibility[type] === false) continue;
     const candidates = elements.filter((el) => el.type === type);
     for (let i = candidates.length - 1; i >= 0; i--) {
-      if (hitTestElement(point, candidates[i])) return candidates[i];
+      if (hitTestElement(point, candidates[i], tolerance)) return candidates[i];
     }
   }
   return null;

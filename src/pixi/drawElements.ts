@@ -257,10 +257,13 @@ export function drawHandles(
   g: Graphics,
   points: { x: number; y: number }[],
   color = '#2563eb',
+  viewportScale = 1,
 ): void {
+  const r = 7 / (viewportScale > 0 ? viewportScale : 1);
+  const strokeW = 2 / (viewportScale > 0 ? viewportScale : 1);
   for (const p of points) {
-    g.circle(p.x, p.y, 7);
+    g.circle(p.x, p.y, r);
     g.fill({ color: '#fff' });
-    g.stroke({ color, width: 2 });
+    g.stroke({ color, width: strokeW });
   }
 }

@@ -45,8 +45,10 @@ type AppState = {
   future: SceneSnapshot[];
   scaleDraft: { a: Point | null; b: Point | null };
   statusMessage: string;
+  draftActive: boolean;
 
   setActiveTool: (tool: ToolId) => void;
+  setDraftActive: (active: boolean) => void;
   setStatusMessage: (msg: string) => void;
   setSnapEnabled: (enabled: boolean) => void;
   toggleLayer: (layer: keyof LayerVisibility) => void;
@@ -105,12 +107,16 @@ export const useSceneStore = create<AppState>()(
     statusMessage: saved
       ? 'Scene restored from browser storage'
       : 'Upload a reference image to get started',
+    draftActive: false,
 
     setActiveTool: (tool) =>
       set({
         activeTool: tool,
         scaleDraft: { a: null, b: null },
+        draftActive: false,
       }),
+
+    setDraftActive: (active) => set({ draftActive: active }),
 
     setStatusMessage: (msg) => set({ statusMessage: msg }),
 

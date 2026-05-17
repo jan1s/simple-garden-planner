@@ -11,7 +11,13 @@ import {
 } from '../../model/grid';
 import { useSceneStore } from '../../store/sceneStore';
 import type { GardenElement, PlotGrid, Point, PolygonElement } from '../../model/types';
-import { findTopElementAt, getElementPoints, hitTestVertex } from '../hitTest';
+import {
+  findTopElementAt,
+  getElementPoints,
+  hitTestVertex,
+  hitToleranceForViewport,
+  vertexHitToleranceForViewport,
+} from '../hitTest';
 
 type DragMode =
   | { kind: 'none' }
@@ -41,9 +47,11 @@ export class SelectTool {
   private drag: DragMode = { kind: 'none' };
   private moved = false;
 
-  onDown(world: Point, e: FederatedPointerEvent): void {
+  onDown(world: Point, e: FederatedPointerEvent, viewportScale = 1): void {
     const store = useSceneStore.getState();
     const { scene, selectedIds, layerVisibility, activeTool } = store;
+    const vertexTol = vertexHitToleranceForViewport(viewportScale);
+    const elementTol = hitToleranceForViewport(viewportScale);
 
     if (activeTool === 'select') {
       for (const id of selectedIds) {
@@ -51,7 +59,12 @@ export class SelectTool {
         const plot = el ? asPlot(el) : null;
         if (!plot?.grid?.enabled) continue;
 
-        const handle = hitTestGridHandle(world, plot, scene.pixelsPerMeter);
+        const handle = hitTestGridHandle(
+          world,
+          plot,
+          scene.pixelsPerMeter,
+          viewportScale,
+        );
         if (handle) {
           store.pushHistory();
           const handles = getGridHandlePositions(
@@ -89,7 +102,7 @@ export class SelectTool {
       const el = scene.elements.find((x) => x.id === id);
       if (!el || isLocked(el)) continue;
       const points = this.getEditablePoints(el);
-      const vi = hitTestVertex(world, points);
+      const vi = hitTestVertex(world, points, vertexTol);
       if (vi >= 0) {
         store.pushHistory();
         this.drag = {
@@ -103,7 +116,12 @@ export class SelectTool {
       }
     }
 
-    const hit = findTopElementAt(world, scene.elements, layerVisibility);
+    const hit = findTopElementAt(
+      world,
+      scene.elements,
+      layerVisibility,
+      elementTol,
+    );
 
     if (hit) {
       if (e.shiftKey) {

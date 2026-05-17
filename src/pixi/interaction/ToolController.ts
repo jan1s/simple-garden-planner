@@ -2,6 +2,7 @@ import type { FederatedPointerEvent } from 'pixi.js';
 import type { Viewport } from 'pixi-viewport';
 import { useSceneStore } from '../../store/sceneStore';
 import type { Point, ToolId } from '../../model/types';
+import { vertexHitToleranceForViewport } from '../hitTest';
 import { PolygonTool } from './PolygonTool';
 import { PolylineTool } from './PolylineTool';
 import { PlaceTool } from './PlaceTool';
@@ -12,6 +13,7 @@ import { DimensionTool } from './DimensionTool';
 export type ToolContext = {
   viewport: Viewport;
   getWorldPoint: (e: FederatedPointerEvent) => Point;
+  getViewportScale: () => number;
   requestRender: () => void;
 };
 
@@ -26,6 +28,7 @@ export class ToolController {
   private spaceHeld = false;
   private lastPan: Point | null = null;
   private unsub: (() => void) | null = null;
+  private activePointers = 0;
 
   private ctx: ToolContext;
 
@@ -58,6 +61,14 @@ export class ToolController {
     window.removeEventListener('keydown', this.onKeyDown);
     window.removeEventListener('keyup', this.onKeyUp);
     this.unsub?.();
+    useSceneStore.getState().setDraftActive(false);
+  }
+
+  finishDraft(): void {
+    if (this.polygonTool.hasPoints()) this.polygonTool.finish();
+    if (this.polylineTool.hasPoints()) this.polylineTool.finish();
+    this.updateDraftFlag();
+    this.ctx.requestRender();
   }
 
   private cancelDrafts(): void {
@@ -65,7 +76,14 @@ export class ToolController {
     this.polylineTool.reset();
     this.dimensionTool.reset();
     this.scaleTool.reset();
+    this.updateDraftFlag();
     this.ctx.requestRender();
+  }
+
+  private updateDraftFlag(): void {
+    const active =
+      this.polygonTool.hasPoints() || this.polylineTool.hasPoints();
+    useSceneStore.getState().setDraftActive(active);
   }
 
   private onKeyDown = (e: KeyboardEvent) => {
@@ -78,8 +96,7 @@ export class ToolController {
       useSceneStore.getState().clearSelection();
     }
     if (e.key === 'Enter') {
-      this.polygonTool.finish();
-      this.polylineTool.finish();
+      this.finishDraft();
       this.ctx.requestRender();
     }
     if ((e.key === 'Delete' || e.key === 'Backspace') && !(e.target instanceof HTMLInputElement)) {
@@ -109,8 +126,19 @@ export class ToolController {
   }
 
   private onDown = (e: FederatedPointerEvent) => {
+    if (e.pointerType === 'touch') {
+      e.preventDefault();
+    }
+
+    if (!e.isPrimary || this.activePointers > 0) {
+      return;
+    }
+
+    this.activePointers += 1;
+
     const tool = useSceneStore.getState().activeTool;
     const world = this.ctx.getWorldPoint(e);
+    const scale = this.ctx.getViewportScale();
 
     if (this.isPanMode(tool) || e.button === 1) {
       this.panning = true;
@@ -122,13 +150,15 @@ export class ToolController {
 
     switch (tool) {
       case 'select':
-        this.selectTool.onDown(world, e);
+        this.selectTool.onDown(world, e, scale);
         break;
       case 'building':
       case 'plot':
-      case 'terrace':
-        this.polygonTool.onDown(world, tool);
+      case 'terrace': {
+        const closeTol = vertexHitToleranceForViewport(scale);
+        this.polygonTool.onDown(world, tool, closeTol);
         break;
+      }
       case 'path':
       case 'fence':
         this.polylineTool.onDown(world, tool);
@@ -144,6 +174,7 @@ export class ToolController {
         this.dimensionTool.onDown(world);
         break;
     }
+    this.updateDraftFlag();
     this.ctx.requestRender();
   };
 
@@ -173,6 +204,8 @@ export class ToolController {
   };
 
   private onUp = (e: FederatedPointerEvent) => {
+    this.activePointers = Math.max(0, this.activePointers - 1);
+
     if (this.panning) {
       this.panning = false;
       this.lastPan = null;
@@ -185,6 +218,7 @@ export class ToolController {
     if (tool === 'select') {
       this.selectTool.onUp(world);
     }
+    this.updateDraftFlag();
     this.ctx.requestRender();
   };
 
@@ -206,6 +240,7 @@ export class ToolController {
     } else if (['path', 'fence'].includes(tool)) {
       this.polylineTool.finish();
     }
+    this.updateDraftFlag();
     this.ctx.requestRender();
   };
 }

@@ -15,7 +15,11 @@ export class PolygonTool {
     this.cursor = null;
   }
 
-  onDown(world: Point, type: 'building' | 'plot' | 'terrace'): void {
+  hasPoints(): boolean {
+    return this.points.length > 0;
+  }
+
+  onDown(world: Point, type: 'building' | 'plot' | 'terrace', closeTolerance = 12): void {
     this.type = type;
     const store = useSceneStore.getState();
     const snapped = snapPoint(world, store.scene.pixelsPerMeter, store.snapEnabled);
@@ -23,7 +27,8 @@ export class PolygonTool {
     // Close on first point if 3+ points
     if (
       this.points.length >= 3 &&
-      Math.hypot(snapped.x - this.points[0].x, snapped.y - this.points[0].y) < 12
+      Math.hypot(snapped.x - this.points[0].x, snapped.y - this.points[0].y) <
+        closeTolerance
     ) {
       this.finish();
       return;

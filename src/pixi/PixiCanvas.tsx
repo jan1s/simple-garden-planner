@@ -4,6 +4,7 @@ import type { FederatedPointerEvent } from 'pixi.js';
 import { Viewport } from 'pixi-viewport';
 import type { Point } from '../model/types';
 import { SceneRenderer } from './SceneRenderer';
+import { registerCanvasActions } from './canvasActions';
 import { ToolController } from './interaction/ToolController';
 
 export function PixiCanvas() {
@@ -63,9 +64,14 @@ export function PixiCanvas() {
       toolController = new ToolController({
         viewport,
         getWorldPoint,
+        getViewportScale: () => viewport.scale.x,
         requestRender,
       });
       toolController.mount(viewport);
+
+      registerCanvasActions({
+        finishDraft: () => toolController.finishDraft(),
+      });
 
       renderer = new SceneRenderer(viewport, () => toolController);
       renderer.mount();
@@ -81,6 +87,7 @@ export function PixiCanvas() {
 
     return () => {
       destroyed = true;
+      registerCanvasActions(null);
       resizeObserver?.disconnect();
       toolController?.destroy();
       renderer?.destroy();

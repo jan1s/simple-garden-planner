@@ -16,6 +16,10 @@ export class PolylineTool {
     this.cursor = null;
   }
 
+  hasPoints(): boolean {
+    return this.points.length > 0;
+  }
+
   onDown(world: Point, type: 'path' | 'fence'): void {
     this.type = type;
     const store = useSceneStore.getState();

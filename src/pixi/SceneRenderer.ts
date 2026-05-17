@@ -155,12 +155,14 @@ export class SceneRenderer {
       }
     }
 
+    const viewportScale = this.viewport.scale.x;
+
     if (preview?.selectHandles && preview.selectHandles.length > 0) {
-      drawHandles(overlay, preview.selectHandles);
+      drawHandles(overlay, preview.selectHandles, '#2563eb', viewportScale);
     }
 
     if (preview?.gridHandles) {
-      drawGridHandles(overlay, preview.gridHandles);
+      drawGridHandles(overlay, preview.gridHandles, viewportScale);
     }
 
     // Selection highlight

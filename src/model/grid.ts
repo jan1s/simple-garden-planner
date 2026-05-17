@@ -1,5 +1,6 @@
 import { HANDLE_RADIUS } from './defaults';
 import { distance, metersToPixels, pointInPolygon } from './geometry';
+import { HANDLE_DRAW_SCREEN_PX, worldTolerance } from '../utils/touch';
 import type { PlotGrid, Point, PolygonElement } from './types';
 
 export const DEFAULT_PLOT_GRID: PlotGrid = {
@@ -121,13 +122,15 @@ export function hitTestGridHandle(
   world: Point,
   plot: PolygonElement,
   pixelsPerMeter: number | null,
+  viewportScale = 1,
 ): GridHandleId | null {
   const grid = plot.grid;
   if (plot.type !== 'plot' || !grid?.enabled) return null;
   const handles = getGridHandlePositions(plot, grid, pixelsPerMeter);
   if (!handles) return null;
 
-  const r = HANDLE_RADIUS + 6;
+  const screenR = HANDLE_DRAW_SCREEN_PX + 10;
+  const r = Math.max(HANDLE_RADIUS + 6, worldTolerance(screenR, viewportScale));
   const dOrigin = distance(world, handles.origin);
   const dOrient = distance(world, handles.orientation);
 

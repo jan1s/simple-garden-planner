@@ -52,7 +52,7 @@ export function LayersPanel() {
         ))}
       </ul>
 
-      <div className="help-box">
+      <div className="help-box help-box-desktop">
         <strong>Shortcuts</strong>
         <ul>
           <li>Space + drag — pan</li>
@@ -62,6 +62,16 @@ export function LayersPanel() {
           <li>Del — delete</li>
           <li>Trees: B-01… Bushes: S-01…</li>
           <li>Ctrl+Z — undo</li>
+        </ul>
+      </div>
+
+      <div className="help-box help-box-mobile">
+        <strong>Touch tips</strong>
+        <ul>
+          <li>Pan tool or two-finger pinch to move and zoom</li>
+          <li>Tap Done to finish a shape</li>
+          <li>Layers / Props buttons open side panels</li>
+          <li>Menu — upload, save, export</li>
         </ul>
       </div>
     </aside>
