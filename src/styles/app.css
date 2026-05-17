@@ -30,11 +30,44 @@ body,
 }
 
 .app {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+    'head'
+    'main'
+    'foot';
   height: 100%;
   height: 100dvh;
+  height: 100svh;
+  overflow: hidden;
   background: var(--bg);
+}
+
+.app-chrome {
+  display: contents;
+}
+
+.toolbar-top {
+  grid-area: head;
+  overflow: visible;
+  position: relative;
+  z-index: 200;
+  flex-shrink: 0;
+}
+
+.toolbar-tools-mobile {
+  display: none;
+  grid-area: tools;
+  position: relative;
+  z-index: 200;
+}
+
+.workspace {
+  grid-area: main;
+}
+
+.app-footer {
+  grid-area: foot;
 }
 
 /* Toolbar */
@@ -47,7 +80,6 @@ body,
   background: var(--panel);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
-  overflow-x: auto;
 }
 
 .toolbar-brand {
@@ -200,19 +232,32 @@ body,
   border: 0;
 }
 
+.toolbar-actions-mobile {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
 .toolbar-menu-wrap {
   position: relative;
   flex-shrink: 0;
+  margin-left: auto;
+}
+
+.toolbar-menu-backdrop {
+  display: none;
 }
 
 .toolbar-overflow {
   position: absolute;
   top: calc(100% + 4px);
   right: 0;
-  z-index: 50;
+  z-index: 110;
   min-width: 200px;
   max-height: min(70dvh, 480px);
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -323,8 +368,11 @@ body,
 /* Workspace */
 .workspace {
   display: flex;
-  flex: 1;
   min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  position: relative;
+  z-index: 0;
 }
 
 .panel {
@@ -475,7 +523,7 @@ body,
   top: 8px;
   left: 8px;
   right: 8px;
-  z-index: 10;
+  z-index: 30;
   gap: 8px;
   pointer-events: none;
 }
@@ -647,6 +695,7 @@ body,
   min-width: 0;
   min-height: 0;
   position: relative;
+  z-index: 0;
   background: #e8ede8;
   touch-action: none;
   -webkit-user-select: none;
@@ -743,6 +792,8 @@ body,
 /* Footer & status bar */
 .app-footer {
   flex-shrink: 0;
+  position: relative;
+  z-index: 200;
   background: var(--panel);
   border-top: 1px solid var(--border);
 }
@@ -955,18 +1006,59 @@ body,
   .panel-toggles {
     display: flex;
     justify-content: space-between;
+    top: max(8px, env(safe-area-inset-top));
+    left: max(8px, env(safe-area-inset-left));
+    right: max(8px, env(safe-area-inset-right));
+  }
+
+  .canvas-shortcuts {
+    z-index: 25;
   }
 
   .toolbar-actions-desktop {
     display: none;
   }
 
+  .toolbar-actions-mobile {
+    display: flex;
+  }
+
   .toolbar-tools-desktop {
     display: none;
   }
 
+  .toolbar-menu-wrap {
+    margin-left: 0;
+  }
+
   .icon-btn.btn-menu {
     display: inline-flex;
+  }
+
+  .toolbar-menu-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 105;
+    border: none;
+    padding: 0;
+    background: rgba(0, 0, 0, 0.35);
+    cursor: pointer;
+  }
+
+  .toolbar-overflow {
+    position: fixed;
+    top: auto;
+    right: 0;
+    left: 0;
+    bottom: 0;
+    width: auto;
+    min-width: 0;
+    max-width: none;
+    max-height: min(75dvh, 520px);
+    border-radius: 12px 12px 0 0;
+    border-bottom: none;
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
   }
 
   .toolbar-top {
@@ -984,6 +1076,15 @@ body,
 }
 
 @media (max-width: 640px) {
+  .app {
+    grid-template-rows: auto 1fr auto auto;
+    grid-template-areas:
+      'head'
+      'main'
+      'tools'
+      'foot';
+  }
+
   .brand-name {
     display: none;
   }
@@ -998,29 +1099,11 @@ body,
     -webkit-overflow-scrolling: touch;
     background: var(--panel);
     border-top: 1px solid var(--border);
-    flex-shrink: 0;
-    order: 10;
+    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.06);
   }
 
-  .app {
-    flex-wrap: wrap;
-  }
-
-  .workspace {
-    order: 1;
-    width: 100%;
-    flex: 1 1 auto;
-    min-height: 0;
-  }
-
-  .toolbar-top {
-    order: 0;
-    width: 100%;
-  }
-
-  .status-bar {
-    order: 11;
-    width: 100%;
+  .legal-disclaimer-compact {
+    display: none;
   }
 
   .icon-btn {
@@ -1064,6 +1147,11 @@ body,
   .plant-table-wrap {
     max-height: none;
     flex: 1;
+  }
+
+  .toolbar-overflow {
+    bottom: calc(var(--toolbar-mobile-h) + env(safe-area-inset-bottom, 0px));
+    max-height: min(60dvh, 480px);
   }
 }
 

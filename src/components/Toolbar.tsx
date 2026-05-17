@@ -137,13 +137,17 @@ export function Toolbar({
 
   useEffect(() => {
     if (!menuOpen) return;
-    const onDocClick = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        onMenuClose();
-      }
+    const onDocPointerDown = (e: PointerEvent) => {
+      if (menuRef.current?.contains(e.target as Node)) return;
+      onMenuClose();
     };
-    document.addEventListener('pointerdown', onDocClick);
-    return () => document.removeEventListener('pointerdown', onDocClick);
+    const id = window.setTimeout(() => {
+      document.addEventListener('pointerdown', onDocPointerDown);
+    }, 0);
+    return () => {
+      window.clearTimeout(id);
+      document.removeEventListener('pointerdown', onDocPointerDown);
+    };
   }, [menuOpen, onMenuClose]);
 
   const handleUploadFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -163,7 +167,15 @@ export function Toolbar({
   const triggerUpload = () => uploadRef.current?.click();
 
   return (
-    <>
+    <div className="app-chrome">
+      <input
+        ref={uploadRef}
+        type="file"
+        accept="image/jpeg,image/png"
+        hidden
+        onChange={handleUploadFile}
+      />
+
       <header className="toolbar toolbar-top">
         <div className="toolbar-brand">
           <span className="brand-icon" aria-hidden>
@@ -185,14 +197,19 @@ export function Toolbar({
           />
         )}
 
-        <div className="toolbar-actions toolbar-actions-desktop">
-          <input
-            ref={uploadRef}
-            type="file"
-            accept="image/jpeg,image/png"
-            hidden
-            onChange={handleUploadFile}
+        <div className="toolbar-actions toolbar-actions-mobile">
+          <IconButton icon="image-plus" label="Upload image" onClick={triggerUpload} />
+          <IconButton
+            icon="folder-open"
+            label="Load JSON"
+            onClick={() => {
+              onLoadClick();
+              onMenuClose();
+            }}
           />
+        </div>
+
+        <div className="toolbar-actions toolbar-actions-desktop">
           <IconButton icon="image-plus" label="Upload image" onClick={triggerUpload} />
 
           {background && (
@@ -260,12 +277,22 @@ export function Toolbar({
             icon="menu"
             label="Menu"
             className="btn-menu"
-            onClick={onMenuToggle}
+            onClick={(e) => {
+              e.stopPropagation();
+              onMenuToggle();
+            }}
             aria-expanded={menuOpen}
             aria-haspopup="true"
           />
           {menuOpen && (
-            <div className="toolbar-overflow" role="menu">
+            <>
+              <button
+                type="button"
+                className="toolbar-menu-backdrop"
+                aria-label="Close menu"
+                onClick={onMenuClose}
+              />
+              <div className="toolbar-overflow" role="menu">
               <OverflowMenuItem
                 icon="image-plus"
                 label="Upload image"
@@ -347,7 +374,8 @@ export function Toolbar({
               />
               <OverflowMenuItem icon="table" label="Plants table" onClick={onPlantsClick} />
               <OverflowMenuItem icon="download" label="Export" onClick={onExportClick} />
-            </div>
+              </div>
+            </>
           )}
         </div>
       </header>
@@ -355,6 +383,6 @@ export function Toolbar({
       <nav className="toolbar toolbar-tools-mobile" aria-label="Drawing tools">
         <ToolButtons className="toolbar-tools" />
       </nav>
-    </>
+    </div>
   );
 }
