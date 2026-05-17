@@ -53,10 +53,16 @@ npm run preview
 
 ### GitHub Pages
 
-Pushes to `main` deploy automatically via GitHub Actions.
+Pushes to `main` deploy automatically to the `gh-pages` branch.
 
-1. In the repo on GitHub: **Settings → Pages → Build and deployment** → Source: **GitHub Actions**
-2. After the workflow runs, the app is at: https://jan1s.github.io/simple-garden-planner/
+**One-time setup** (if you see a 404):
+
+1. Open **Settings → Pages**
+2. Under **Build and deployment**, set **Source** to **Deploy from a branch**
+3. Choose branch **`gh-pages`**, folder **`/ (root)`**, then **Save**
+4. Wait for the [Actions](https://github.com/jan1s/simple-garden-planner/actions) workflow to finish (green check)
+
+**Live URL:** https://jan1s.github.io/simple-garden-planner/
 
 Local build matching Pages (subpath `/simple-garden-planner/`):
 
